@@ -1,0 +1,75 @@
+<?php
+$state = $this->getContent();
+?>
+<?php if ($state->count()): ?>
+<div class="container-fluid">
+<div id="form-search" class="col-xs-3">
+	<h3>Search By</h3>
+	<form action="<?php echo $this->getUrl('store/index/search');?>" method="POST">
+		<label>Search Title, State or Postcode:&nbsp;</label><br />
+		<input type="text" name="search"><input type="submit" value="Search">
+	</form>
+	<h3>Position</h3>
+	<form action="<?php echo $this->getUrl('store/index/position');?>" method="POST">
+		<label>Address:&nbsp;</label><br />
+		<input type="text" name="address"><input type="submit" value="Search">
+	</form>
+	<form action="<?php echo $this->getUrl('store/index/position');?>" method="POST">
+		<label>Longitude:&nbsp;</label><br />
+		<input type="text" name="long" required><br />
+		<label>Latitude:&nbsp;</label><br />
+		<input type="text" name="lat" required><br />
+		<input type="submit" value="Search" id="position">
+	</form>
+</div>
+<div id="map" class="col-xs-9"></div>
+</div>
+<!-- callback function initMap -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAJnO8_hu8aA-6miQE9aly3qcPwHpSFVY0&callback=initMap"></script>
+<script>
+	function initMap() {
+		var locations = [];
+		<?php $i = 0; 
+		foreach ($state as $key) {
+			echo "locations[".$i."] = { info: '".$key['title']."', lat: ".$key['latitude'].", long: ".$key['longitude']." }; ";
+			$i += 1;
+		}
+		?>
+
+		// Tao map moi trong div, focus vao vi tri lng va lat
+		var map = new google.maps.Map(document.getElementById('map'), {
+			zoom: 4,
+			center: new google.maps.LatLng(locations[0].lat, locations[0].long),
+		});
+
+		// Doi tuong info moi
+		var infowindow = new google.maps.InfoWindow({});
+
+		var marker, i;
+		var image = {
+				url: '<?php echo Mage::getBaseUrl('media').'/theme/'.Mage::getStoreConfig('store/test/logo',Mage::app()->getStore()); ?>',
+				scaledSize: new google.maps.Size(30, 30)
+			};
+
+		for (i = 0; i < locations.length; i++) {
+			// Tao danh dau moi, voi map la bien map o tren
+			marker = new google.maps.Marker({
+				position: new google.maps.LatLng(locations[i].lat, locations[i].long),
+				map: map,
+				<?php echo file_exists(Mage::getBaseDir('media').'/theme/'.Mage::getStoreConfig('store/test/logo',Mage::app()->getStore())) ? "
+				icon: image" : "" ?>
+			});
+
+			// add su kien click cho danh dau
+			google.maps.event.addListener(marker, 'click', (function (marker, i) {
+				return function () {
+					infowindow.setContent(locations[i].info);
+					infowindow.open(map, marker);
+				}
+			})(marker, i));
+		}
+	}
+</script>
+<?php else: ?>
+	<h2>You have no location</h2>
+<?php endif ?>
